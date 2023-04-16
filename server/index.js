@@ -1,6 +1,8 @@
+const cors = require('cors');
 const express = require('express');
-const db= require('./models')
-const app = express()
+const db = require('./models');
+
+const app = express();
 
 function tryCatch(handler) {
   return async (req, res, next) => {
@@ -13,35 +15,51 @@ function tryCatch(handler) {
   };
 }
 
-
 async function getArticles (req, res, next) {
   res.send(await db.Article.findAll());
 }
 
-async function getArticle (req, res, next) {
-  try {
-    const article = await db.Article.findOne({
-      where: {
-        slug: req.params.articleSlug
-      }
-    });
-
-    if (!article) {
-      return res.status(404).send({ error: 'Not Found' });
+async function getArticle (req, res) {
+  const article = await db.Article.findOne({
+    where: {
+      slug: req.params.articleSlug
     }
-    res.send(article);
+  });
+
+  if (!article) {
+    return res.status(404).send({ error: 'Not Found' });
   }
-  catch (error) {
-    next(error);
-  }
+  res.send(article);
 }
+
+async function createArticle(req, res) {
+  // access the fields sent by the client & build an article with those values; save that and send back the created article, including an id in the response
+  // (typically we permit only specific values, to prevent malicious actors from tampering with our system)
+  // (also, we should validate the values)
+  const newArticle = {
+    slug: req.body.slug,
+    title: req.body.title,
+    body: req.body.body,
+  };
+
+  const article = await db.Article.create(newArticle);
+
+  res.send(article)
+}
+
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
+app.use(express.json())
 
 // Define the routes (API endpoints)
 app.get('/articles', tryCatch(getArticles));
 app.get('/articles/:articleSlug', tryCatch(getArticle));
+app.post('/articles', tryCatch(createArticle))
 
 // Catch 404
 app.use((req, res, next) => {
+  console.log('im in the catch 404!!')
   res.status(404).send({ error: 'Not Found' });
 });
 
@@ -56,4 +74,3 @@ const port = 3001;
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
-
