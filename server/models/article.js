@@ -15,25 +15,32 @@ module.exports = (sequelize, DataTypes) => {
   }
   Article.init({
     id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
       allowNull: false,
-
+      autoIncrement: true,
+      primaryKey: true,
+      type: DataTypes.BIGINT,
     },
     slug: {
       allowNull: false,
       type: DataTypes.STRING,
-    }, 
-    title:{
+      validate: {
+        len: [1, 128]
+      },
+    },
+    title: {
       allowNull: false,
       type: DataTypes.STRING,
+      validate: {
+        len: [1, 128]
+      },
     },
     body: {
       allowNull: false,
       type: DataTypes.STRING,
-    }
-
+      validate: {
+        len: [1, 16384]
+      },
+    },
   }, {
     sequelize,
     modelName: 'Article',

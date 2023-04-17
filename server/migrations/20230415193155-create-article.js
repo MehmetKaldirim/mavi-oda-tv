@@ -11,7 +11,8 @@ module.exports = {
       },
       slug: {
         allowNull: false,
-        type: Sequelize.STRING(128)
+        type: Sequelize.STRING(128),
+        unique: true
       },
       title: {
         allowNull: false,
@@ -19,7 +20,7 @@ module.exports = {
       },
       body: {
         allowNull: false,
-        type: Sequelize.STRING(4096)
+        type: Sequelize.STRING(16384)
       },
       created_at: {
         allowNull: false,
