@@ -1,4 +1,3 @@
-'use strict';
 const cors = require('cors');
 const express = require('express');
 const db = require('./models');
@@ -33,15 +32,22 @@ async function getArticle (req, res) {
   res.send(article);
 }
 
+function filterFields(body) {
+  const filteredBody = {};
+  const permittedFields = ['slug', 'title', 'body'];
+
+  for (const permittedField of permittedFields) {
+    filteredBody[permittedField] = body[permittedField];
+  }
+
+  return filteredBody;
+}
+
 async function createArticle(req, res) {
   // access the fields sent by the client & build an article with those values; save that and send back the created article, including an id in the response
   // (typically we permit only specific values, to prevent malicious actors from tampering with our system)
   // (also, we should validate the values)
-  const newArticle = {};
-  const permittedFields = ['slug', 'title', 'body'];
-  for (const permittedField of permittedFields) {
-    newArticle[permittedField] = req.body[permittedField];
-  }
+  const newArticle = filterFields(req.body);
 
   const existingArticle = await db.Article.findOne({
     where: {
@@ -58,10 +64,26 @@ async function createArticle(req, res) {
     article = await db.Article.create(newArticle);
   }
   catch (error) {
-    return res.status(422).send({ error: 'slug must be between 1-128 characters' });
+    return res.status(422).send({ error: 'Unprocessable Entity' });
   }
 
   res.send(article)
+}
+
+async function updateArticle(req, res) {
+  const existingArticle = await db.Article.findOne({
+    where: {
+      slug: req.params.articleSlug
+    }
+  });
+
+  if (!existingArticle) {
+    return res.status(404).send({ error: 'Not Found' });
+  }
+
+  const modifiedArticle = filterFields(req.body);
+  const updatedArticle = await existingArticle.update(modifiedArticle);
+  res.send(updatedArticle);
 }
 
 app.use(cors({
@@ -72,7 +94,8 @@ app.use(express.json())
 // Define the routes (API endpoints)
 app.get('/articles', tryCatch(getArticles));
 app.get('/articles/:articleSlug', tryCatch(getArticle));
-app.post('/articles', tryCatch(createArticle))
+app.post('/articles', tryCatch(createArticle));
+app.put('/articles/:articleSlug', tryCatch(updateArticle));
 
 // Catch 404
 app.use((req, res, next) => {
