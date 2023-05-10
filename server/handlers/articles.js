@@ -4,7 +4,33 @@ const filterFields = require('../utilities/filterFields');
 const permittedFields = ['slug', 'title', 'body'];
 
 async function getArticles (req, res, next) {
-  res.send(await db.Article.findAll());
+    // page 1 (implicit default) offset= 0
+    // page 2  offset= pageSize * (page-1)
+
+  const page = parseInt(req.query.page, 10) || 1;
+  
+  const pageSize =3;  //todo: make it 10 later
+  const result = await db.Article.findAndCountAll({
+    limit: pageSize,
+    offset: pageSize * (page-1),
+    order:['id']
+  }) 
+
+  const articles = result.rows;
+  const totalPages = Math.ceil(result.count / pageSize);
+  
+  if(page > totalPages){
+    return res.status(422).send({error:'Unprocessable Entity'});
+  }
+
+  res.send({
+    meta: {
+      page,
+      pageSize,
+      totalPages,
+    },
+    items: articles
+  });
 }
 
 async function getArticle (req, res) {
