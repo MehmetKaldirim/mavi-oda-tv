@@ -39,8 +39,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       type: DataTypes.STRING,
       validate: {
-        len: [1, 16384]
+        len: [1, 4096]
       },
+    },
+    thumbnailUrl: {
+      allowNull: true,
+      type: DataTypes.STRING(4096),
     },
   }, {
     sequelize,
