@@ -7,23 +7,24 @@ const permittedFields = ['slug', 'title', 'body', 'thumbnailUrl'];
 
 
 async function getArticles (req, res, next) {
-    // page 1 (implicit default) offset= 0
-    // page 2  offset= pageSize * (page-1)
-
+  // ?page=1 (implicit default)
+  // offset: 0
+  //
+  // ?page=2
+  // offset: pageSize * (page - 1)
   const page = parseInt(req.query.page, 10) || 1;
-  
-  const pageSize =3;  //todo: make it 10 later
+
+  const pageSize = 3; // todo: make it 10
   const result = await db.Article.findAndCountAll({
     limit: pageSize,
-    offset: pageSize * (page-1),
-    order:['id']
-  }) 
-
+    offset: pageSize * (page - 1),
+    order: ['id']
+  });
   const articles = result.rows;
   const totalPages = Math.ceil(result.count / pageSize);
-  
-  if(page > totalPages){
-    return res.status(422).send({error:'Unprocessable Entity'});
+
+  if (page > totalPages) {
+    return res.status(422).send({ error: 'Unprocessable Entity' });
   }
 
   res.send({
@@ -125,6 +126,7 @@ async function updateArticleImage(req, res) {
   // Store the file (right now we just move to public/ directory)
   const oldPath = path.join(__dirname, '..', 'uploads', req.file.filename);
   const newPath = path.join(__dirname, '..', 'public', 'images', req.file.filename)
+
   // left as exercise: handle errors
   try {
     fs.renameSync(oldPath, newPath);
@@ -133,6 +135,11 @@ async function updateArticleImage(req, res) {
     return res.status(500).send({ error: 'Internal Server Error' });
   }
 
+  if (article.thumbnailUrl) {
+    const thumbnailFilename = article.thumbnailUrl.replace('http://localhost:3001/assets/images/', '');
+    const oldPublicPath = path.join(__dirname, '..', 'public', 'images', thumbnailFilename);
+    fs.rmSync(oldPublicPath);
+  }
   const thumbnailUrl = `http://localhost:3001/assets/images/${req.file.filename}`;
   await article.update({
     thumbnailUrl
